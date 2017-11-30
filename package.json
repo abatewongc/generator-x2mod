@@ -1,0 +1,23 @@
+{
+  "name": "generator-x2mod",
+  "version": "0.1.0",
+  "description": "A Yeoman generator to create an XCOM 2 mod.",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "keywords": [
+    "xcom",
+    "xcom2",
+    "yeoman-generator"
+  ],
+  "author": "Jammerware",
+  "license": "ISC",
+  "dependencies": {
+    "yeoman-generator": "^2.0.1",
+    "yosay": "^2.0.1"
+  },
+  "files": [
+    "generators"
+  ]
+}

@@ -44,7 +44,7 @@ module.exports = class extends Generator {
             default: this.options.modName
         };
 
-        return this.prompt(namePrompt).then(answer => {
+        return this.prompt(namePrompt).then((answer) => {
             this.modConfig.friendlyName = answer.friendlyName;
             this.modConfig.name = this.modConfig.name || this._createLegalModName(this.modConfig.friendlyName);
 
@@ -85,6 +85,25 @@ module.exports = class extends Generator {
                 this.modConfig.description = answers.description;
                 this.modConfig.requireWotC = answers.requireWotC;
                 this.modConfig.editor = answers.editor;
+
+                // do not like
+                return this.prompt([{
+                    type: 'input',
+                    name: 'gamePath',
+                    message: 'Where\'s XCOM 2 installed (ending in "/XCOM 2")?',
+                    default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2',
+                    when: (things) => this.modConfig.editor
+                }, {
+                    type: 'input',
+                    name: 'sdkPath',
+                    message: 'Where\'s the SDK installed (ending in "/XCOM 2 War of the Chosen SDK")?',
+                    default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2 War of the Chosen SDK',
+                    when: (things) => this.modConfig.editor
+                }
+                ]).then(answers => {
+                    this.modConfig.gamePath = answers.gamePath;
+                    this.modConfig.sdkPath = answers.sdkPath;
+                });
             });
         });
     }
@@ -111,14 +130,22 @@ module.exports = class extends Generator {
                 this.fs.copyTpl(
                     this.templatePath('editorConfig/.vscode/tasks.json'),
                     this.destinationPath('.vscode/tasks.json'),
-                    { modName: this.modConfig.name }
+                    {
+                        gamePath: this.modConfig.gamePath,
+                        sdkPath: this.modConfig.sdkPath,
+                        modName: this.modConfig.name
+                    }
                 );
             }
             else if (this.modConfig.editor === 'atom') {
                 this.fs.copyTpl(
                     this.templatePath('editorConfig/.atom-build.yml'),
                     this.destinationPath('.atom-build.yml'),
-                    { modName: this.modConfig.name }
+                    {
+                        gamePath: this.modConfig.gamePath,
+                        sdkPath: this.modConfig.sdkPath,
+                        modName: this.modConfig.name
+                    }
                 )
             }
         }

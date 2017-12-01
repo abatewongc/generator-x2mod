@@ -19,6 +19,6 @@ npm i -g generator x2mod       // the first time you use generator-x2mod
 yo x2mod
 ```
 
-You're off to the races!
+You're off to the races, and _somehow_, Yeoman even knows that you're the commander!
 
 ![check it](https://i.imgur.com/K7ox5XB.png)

@@ -6,8 +6,8 @@ Param(
     [bool]$forceFullBuild = $false # force the script to rebuild the base game's scripts, even if they're already built
 )
 
-function WriteModMetadata([string]$mod, [string]$sdkPath, [int]$publishedId, [string]$title, [string]$description) {
-    Set-Content "$sdkPath/XComGame/Mods/$mod/$mod.XComMod" "[mod]`npublishedFileId=$publishedId`nTitle=$title`nDescription=$description`nRequiresXPACK=true"
+function WriteModMetadata([string]$mod, [string]$sdkPath, [int]$publishedId, [string]$title, [string]$description, [string]$writeTo) {
+    Set-Content $writeTo "[mod]`npublishedFileId=$publishedId`nTitle=$title`nDescription=$description`nRequiresXPACK=true"
 }
 
 function StageDirectory ([string]$directoryName, [string]$srcDirectory, [string]$targetDirectory) {
@@ -50,19 +50,38 @@ StageDirectory "Localization" $modSrcRoot $stagingPath
 StageDirectory "Src" $modSrcRoot $stagingPath
 New-Item "$stagingPath/Script" -ItemType Directory
 
-# read mod metadata from the x2proj file
-Write-Host "Reading mod metadata from $modSrcRoot/$modNameCanonical.x2proj..."
-[xml]$x2projXml = Get-Content -Path "$modSrcRoot/$modNameCanonical.x2proj"
-$modProperties = $x2projXml.Project.PropertyGroup
-$modPublishedId = $modProperties.SteamPublishedId
-$modTitle = $modProperties.Name
-$modDescription = $modProperties.Description
-Write-Host "Read."
+# create mod metadata (.xcommod) file - used by Firaxis' "make" tooling
+$x2projPath = "$modSrcRoot/$modNameCanonical.x2proj"
+$xcomModPath = "$modSrcRoot/$modNameCanonical.XComMod"
+$metadataPublishPath = "$sdkPath/XComGame/Mods/$modNameCanonical/$modNameCanonical.XComMod"
 
-# write mod metadata - used by Firaxis' "make" tooling
-Write-Host "Writing mod metadata..."
-WriteModMetadata -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription
-Write-Host "Written."
+if (Test-Path $x2projPath) {
+    # if the mod source contains an x2proj (created with ModBuddy), use it to compose and write the metadata
+    Write-Host "This mod has an x2proj file at $x2projPath. Reading metadata from there..."
+
+    [xml]$x2projXml = Get-Content -Path "$modSrcRoot/$modNameCanonical.x2proj"
+    $modProperties = $x2projXml.Project.PropertyGroup
+    $modPublishedId = $modProperties.SteamPublishedId
+    $modTitle = $modProperties.Name
+    $modDescription = $modProperties.Description
+    Write-Host "Read."
+
+    # write mod metadata based on x2proj xml
+    Write-Host "Writing mod metadata to $metadataPublishPath..."
+    WriteModMetadata -writeTo $metadataPublishPath -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription
+    Write-Host "Written."
+}
+elseif (Test-Path $xcomModPath) {
+    # if the mod already has an .xcommod file in its root (hopefully created with the Yeoman generator?), just copy
+    # that to the appropriate location
+    Write-Host "This mod has an .XComMod file at $xcomModPath. Copying it to the publish location."
+    Write-Host "Copying to $metadataPublishPath..."
+    Copy-Item $xcomModPath -Destination $metadataPublishPath -Force
+    Write-Host "Copied."
+}
+else {
+    throw "Metadata for your mod couldn't be created. This is usually because you have neither an .x2proj or .XComMod file in your source directory's root."
+}
 
 # mirror the SDK's SrcOrig to its Src
 Write-Host "Mirroring SrcOrig to Src..."

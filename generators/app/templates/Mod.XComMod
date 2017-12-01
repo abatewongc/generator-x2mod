@@ -1,0 +1,5 @@
+[mod]
+publishedFileId=0
+Title=<%= modTitle %>
+Description=<%= modDescription %>
+RequiresXPACK=<%= requireWotC %>

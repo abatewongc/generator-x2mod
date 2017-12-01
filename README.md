@@ -11,7 +11,7 @@ I already started doing my part to give us modders more choices by creating [bui
 [Yeoman](http://yeoman.io/) is the open source community's answer to repository and project templating. It's a generator framework that lets OSS devs create, use, and share templates for any project in any framework and on any platform that they want. Fortunately enough, "any framework and on any platform" includes XCOM 2. This project is a Yeoman generator for mod projects, and getting started with it is really easy.
 
 ## How do I anything?
-First, get [node](https://nodejs.org/en/download/) and [npm](https://www.npmjs.com/) if you don't already have them. Then open a terminal, powershell, or command shell and get ready to experience Yeoman magic:
+First, get [node](https://nodejs.org/en/download/) and [npm](https://www.npmjs.com/). (NPM comes with node if you don't already have either one.) Then open a terminal, powershell, or command shell and get ready to experience Yeoman magic:
 
 ```
 npm i -g yo                    // you'll only have to do these two
@@ -19,9 +19,6 @@ npm i -g generator x2mod       // the first time you use generator-x2mod
 yo x2mod
 ```
 
-Then, you're off to the races!
+You're off to the races!
 
-[!check it](https://i.imgur.com/K7ox5XB.png)
-
-
-
+![check it](https://i.imgur.com/K7ox5XB.png)

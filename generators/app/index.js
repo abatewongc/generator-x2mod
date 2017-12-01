@@ -71,10 +71,17 @@ module.exports = class extends Generator {
             // TODO: some kind of injectable service?
             if (this.modConfig.editor === 'vscode') {
                 this.fs.copyTpl(
-                    this.templatePath('.vscode/tasks.json'),
+                    this.templatePath('editorConfig/.vscode/tasks.json'),
                     this.destinationPath('.vscode/tasks.json'),
                     { modName: this.modConfig.name }
                 );
+            }
+            else if (this.modConfig.editor === 'atom') {
+                this.fs.copyTpl(
+                    this.templatePath('editorConfig/.atom-build.yml'),
+                    this.destinationPath('.atom-build.yml'),
+                    { modName: this.modConfig.name }
+                )
             }
         }
 

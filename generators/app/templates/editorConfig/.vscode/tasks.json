@@ -18,6 +18,12 @@
             "problemMatcher": []
         },
         {
+            "label": "publish",
+            "type": "shell",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath 'E:/Devspace/XCOM 2 Mods/alternative-mod-uploader/Binaries/Firaxis.SteamWorkshop.exe'",
+            "problemMatcher": []
+        },
+        {
             "label": "runUnrealEditor",
             "type": "shell",
             "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath 'D:/Steam/steamapps/common/XCOM 2 War of the Chosen SDK'",

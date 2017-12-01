@@ -14,6 +14,7 @@ env:
   sdkPath: "'C:/SteamLibrary/steamapps/common/XCOM 2 War of the Chosen SDK/'"                         # the path to your SDK installation ending in "XCOM 2 War of the Chosen SDK"
   gamePath: "'C:/SteamLibrary/steamapps/common/XCOM 2/'"                                              # the path to your XCOM 2 installation ending in "XCOM 2"
   PSPath: "C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"                            # the path to your installation of powershell
+  amlPath: "'<%= amlPath %>''"                                                                        # the path to your installation of the community alternative mod uploader
 targets:
   run:
     name: run
@@ -35,3 +36,10 @@ targets:
     env:
       PSPath: "C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"
       sdkPath: "'C:/SteamLibrary/steamapps/common/XCOM 2 War of the Chosen SDK'"
+  publish:
+    name: publish
+    sh: true
+    cmd: "%PSPath%"
+    args:
+      - "./scripts/publish.ps1"
+      - "-amlPath %amlPath%"

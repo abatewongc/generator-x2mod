@@ -1,18 +1,9 @@
 [![npm version](https://badge.fury.io/js/generator-x2mod.svg)](https://badge.fury.io/js/generator-x2mod)
 
-# yo x2mod: a Yeoman generator for XCOM 2 mods
-Welcome to `generator-x2mod`, a Yeoman generator for mods for Firaxis' XCOM 2!
+# yo x2mod: Now this is mod-racing
+Welcome to `yo x2mod`, a Yeoman generator for mods for Firaxis' XCOM 2!
 
-## What even is this?
-Firaxis graciously ships an SDK called ModBuddy to go alongside XCOM 2, which is wonderful. The less wonderful part is that ModBuddy is based on Visual Studio 20-something-really-old, and while older versions of Visual Studio can be powerful, they can also be clunky, slow, and, impressively enough for pieces of software, outright vindictive. 
-
-I already started doing my part to give us modders more choices by creating [build scripts](https://github.com/jammerware/x2mods-dev-scripts) that we can use to compile and run our mods in other text editors and IDEs. Using these scripts had a cost. It completely hosed one of the great benefits of the Visual-Studio-based SDK: the templates. The templates that ship with ModBuddy are great starting places for new mods, and I didn't have a solution to that.
-
-... Until now.
-
-[Yeoman](http://yeoman.io/) is the open source community's answer to project templating. It's a generator framework that lets open source programmers create, use, and share templates for any project in any framework and on any platform that they want. Fortunately enough, "any framework and on any platform" includes XCOM 2. This project is a Yeoman generator for mod projects, and getting started with it is really easy.
-
-## How do I anything?
+## How do I get started?
 First, get [node](https://nodejs.org/en/download/) and [npm](https://www.npmjs.com/). (NPM comes with node if you don't already have either one.) Then open a terminal, powershell, or command shell and get ready to experience Yeoman magic:
 
 ```
@@ -21,9 +12,21 @@ npm i -g generator x2mod       // the first time you use generator-x2mod
 yo x2mod
 ```
 
-You're off to the races, and _somehow_, Yeoman even knows that you're the commander!
+Then open up your favorite text editor, and you're off to the modding races. Wait - how does Yeoman know that you're the commander?
 
 ![check it](https://i.imgur.com/K7ox5XB.png)
+
+## Why would I ever do insane command-line crap when I have ModBuddy?
+
+Maybe you wouldn't! If ModBuddy suits your workflow, keep ModBuddying it up. But here's how I got here:
+
+Firaxis graciously ships an SDK called ModBuddy to help modders create community-based content for XCOM 2. This is wonderful. The less wonderful part is that ModBuddy itself is based on Visual Studio 20-something-really-old, and while older versions of Visual Studio can be powerful, they can also be clunky, slow, and, impressively enough for pieces of software, outright vindictive. 
+
+I already started trying to do my part to give us modders more choices by creating [build scripts](https://github.com/jammerware/x2mods-dev-scripts) that we can use to compile and run our mods in other text editors and IDEs. Using these scripts as a standalone replacement for ModBuddy had a cost. It completely hosed one of the great benefits of the Visual-Studio-based SDK: the templates. When you create a new mod with ModBuddy, it offers you a sweet list of templates to get started. These are awesome for getting a new mod off the ground, and I didn't have a solution to that.
+
+... Until now.
+
+[Yeoman](http://yeoman.io/) is the open source community's answer to project templating. It's a generator framework that lets open source programmers create, use, and share templates for any project in any framework and on any platform that they want. Fortunately enough, "any framework and on any platform" includes XCOM 2. This project is a Yeoman generator for mod projects, and getting started with it is really easy.
 
 ## FAQ
 ### Sweet, so I don't need the XCOM 2 SDK anymore?

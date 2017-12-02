@@ -78,6 +78,18 @@ module.exports = class extends Generator {
                     name: 'Atom',
                     value: 'atom'
                 }]
+            }, {
+                type: 'input',
+                name: 'gamePath',
+                message: 'Where\'s XCOM 2 installed (ending in "/XCOM 2")?',
+                default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2',
+                when: (answers) => answers.editor
+            }, {
+                type: 'input',
+                name: 'sdkPath',
+                message: 'Where\'s the SDK installed (ending in "/XCOM 2 War of the Chosen SDK")?',
+                default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2 War of the Chosen SDK',
+                when: (answers) => answers.editor
             }];
 
             return this.prompt(prompts).then(answers => {
@@ -85,25 +97,8 @@ module.exports = class extends Generator {
                 this.modConfig.description = answers.description;
                 this.modConfig.requireWotC = answers.requireWotC;
                 this.modConfig.editor = answers.editor;
-
-                // do not like
-                return this.prompt([{
-                    type: 'input',
-                    name: 'gamePath',
-                    message: 'Where\'s XCOM 2 installed (ending in "/XCOM 2")?',
-                    default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2',
-                    when: (things) => this.modConfig.editor
-                }, {
-                    type: 'input',
-                    name: 'sdkPath',
-                    message: 'Where\'s the SDK installed (ending in "/XCOM 2 War of the Chosen SDK")?',
-                    default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2 War of the Chosen SDK',
-                    when: (things) => this.modConfig.editor
-                }
-                ]).then(answers => {
-                    this.modConfig.gamePath = answers.gamePath;
-                    this.modConfig.sdkPath = answers.sdkPath;
-                });
+                this.modConfig.gamePath = answers.gamePath;
+                this.modConfig.sdkPath = answers.sdkPath;
             });
         });
     }
@@ -177,8 +172,8 @@ module.exports = class extends Generator {
 
     _createModMetadata(title, description, requireWotC) {
         this.fs.copyTpl(
-            this.templatePath('Mod.XComMod'),
-            this.destinationPath(`${this.modConfig.name}.XComMod`),
+            this.templatePath('src/Mod.XComMod'),
+            this.destinationPath(`src/${this.modConfig.name}.XComMod`),
             {
                 modTitle: title,
                 modDescription: description,

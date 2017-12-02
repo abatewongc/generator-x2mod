@@ -52,7 +52,7 @@ New-Item "$stagingPath/Script" -ItemType Directory
 
 # create mod metadata (.xcommod) file - used by Firaxis' "make" tooling
 $x2projPath = "$modSrcRoot/$modNameCanonical.x2proj"
-$xcomModPath = "$modSrcRoot/$modNameCanonical.XComMod"
+$xcomModPath = "$srcDirectory/$modNameCanonical.XComMod"
 $metadataPublishPath = "$sdkPath/XComGame/Mods/$modNameCanonical/$modNameCanonical.XComMod"
 
 if (Test-Path $x2projPath) {

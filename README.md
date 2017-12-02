@@ -26,26 +26,20 @@ You're off to the races, and _somehow_, Yeoman even knows that you're the comman
 ![check it](https://i.imgur.com/K7ox5XB.png)
 
 ## FAQ
-**Q:** Sweet, so I don't need the XCOM 2 SDK anymore?
+### Sweet, so I don't need the XCOM 2 SDK anymore?
 
-**A:** You still need the SDK because it contains the Unreal compiler, tools, and assets you'll need (and some you'll probably even want) when you're creating your mod. `yo x2mod` just encapsulates a way to create mods from templates and provides scripts to build and run them in development mode. If that covers your modding needs, you never need to open ModBuddy again if you don't want to.
+You still need the SDK because it contains the Unreal compiler, tools, and assets you'll need (and some you'll probably even want) when you're creating your mod. `yo x2mod` just encapsulates a way to create mods from templates and provides scripts to build and run them in development mode. If that covers your modding needs, you never need to open ModBuddy again if you don't want to.
 
----
+### But ModBuddy has templates for all kinds of mods, like voice packs and missions and weapons and crap. What if I love those?
 
-**Q:** But ModBuddy has templates for all kinds of mods, like voice packs and missions and weapons and crap. What if I love those?
+Good on you! The cool thing about creating a open source Yeoman generator for mods is that we as a community can decide what kinds of templates we want to be available when we use `yo x2mod` to create a mod. I'm not saying we'll all want to have "Example Mod with A Spiky Grenade That Turns All Soldier Hair Blue" as an option when we're spinning up a new mod, but options that we didn't have before like "Example Highlander-Compatible Mod" are possible with this workflow. The bottom line here is that if you're interested in a mod template that `yo x2mod` doesn't have yet (which is likely, since right now it just automatically creates an absolutely bare-bones mod), feel free to open an issue or submit a PR, and we'll talk about it.
 
-**A:** Good on you! The cool thing about creating a open source Yeoman generator for mods is that we as a community can decide what kinds of templates we want to be available when we use `yo x2mod` to create a mod. I'm not saying we'll all want to have "Example Mod with A Spiky Grenade That Turns All Soldier Hair Blue" as an option when we're spinning up a new mod, but options that we didn't have before like "Example Highlander-Compatible Mod" are possible with this workflow. The bottom line here is that if you're interested in a mod template that `yo x2mod` doesn't have yet (which is likely, since right now it just automatically creates an absolutely bare-bones mod), feel free to open an issue or submit a PR, and we'll talk about it.
+### If I create a mod with this tool and decide I want to go back to a ModBuddy-based workflow, can I do that?
 
----
+You can, but it's not trivial. `yo x2mod` doesn't make any attempt to masquerade your mod as ModBuddy-compatible - rather than using `.XCOM_sln` and `.x2proj` files like ModBuddy does, it just creates an `.XComMod` file in the source directory that its build script knows to consult when building your mod for development and debugging. If you want to move a mod that was bootstrapped with this generator into a ModBuddy project, the easiest way will likely be to create an empty ModBuddy project with the same safe name as your mod and manually add the mod files into it in the appropriate folder structure. TL;DR - Try before you buy. Migrating back to ModBuddy isn't for the faint of heart. Sorry, though.
 
-**Q:** If I create a mod with this tool and decide I want to go back to a ModBuddy-based workflow, can I do that?
+### What happens when I want to publish my mod? Don't you need an .x2proj file to publish mods?
 
-**A:** You can, but it's not trivial. `yo x2mod` doesn't make any attempt to masquerade your mod as ModBuddy-compatible - rather than using `.XCOM_sln` and `.x2proj` files like ModBuddy does, it just creates an `.XComMod` file in the source directory that its build script knows to consult when building your mod for development and debugging. If you want to move a mod that was bootstrapped with this generator into a ModBuddy project, the easiest way will likely be to create an empty ModBuddy project with the same safe name as your mod and manually add the mod files into it in the appropriate folder structure. TL;DR - Try before you buy. Migrating back to ModBuddy isn't for the faint of heart. Sorry, though.
-
----
-
-**Q:** What happens when I want to publish my mod? Don't you need an .x2proj file to publish mods?
-
-**A:** Publishing is for suckers. Real modders just stay in development for years.
+Publishing is for suckers. Real modders just stay in development for years to avoid commitment.
 
 I'm kidding. I haven't figured out how I'm going to do this yet, but it seems possible. I need to figure out how the `.x2proj` is used when a mod is uploaded via Steam or the Alternative Mod Uploader and possibly generate a fake one for this purpose if necessary. Details coming. Someday.

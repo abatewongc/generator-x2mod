@@ -1,6 +1,6 @@
 {
   "name": "generator-x2mod",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A Yeoman generator that creates a XCOM 2 mods. Community maintained to free the masses from ModBuddy!",
   "main": "index.js",
   "scripts": {

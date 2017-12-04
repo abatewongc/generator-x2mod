@@ -123,27 +123,32 @@ module.exports = class extends Generator {
                 this.destinationPath('scripts')
             );
 
-            // TODO: some kind of injectable service?
+            this.log('raw');
+            this.log({
+                gamePath: this.modConfig.gamePath,
+                sdkPath: this.modConfig.sdkPath,
+                modName: this.modConfig.name
+            });
+
+            let editorTemplateParams = {
+                gamePath: this.modConfig.gamePath.replace(/\\/g, '/'),
+                sdkPath: this.modConfig.sdkPath.replace(/\\/g, '/'),
+                modName: this.modConfig.name
+            };
+
+            // TODO: some kind of injectable service? subgenerator?
             if (this.modConfig.editor === 'vscode') {
                 this.fs.copyTpl(
                     this.templatePath('editorConfig/.vscode/tasks.json'),
                     this.destinationPath('.vscode/tasks.json'),
-                    {
-                        gamePath: this.modConfig.gamePath.replace('\\', '\\\\'),
-                        sdkPath: this.modConfig.sdkPath.replace('\\', '\\\\'),
-                        modName: this.modConfig.name
-                    }
+                    editorTemplateParams
                 );
             }
             else if (this.modConfig.editor === 'atom') {
                 this.fs.copyTpl(
                     this.templatePath('editorConfig/.atom-build.yml'),
                     this.destinationPath('.atom-build.yml'),
-                    {
-                        gamePath: this.modConfig.gamePath,
-                        sdkPath: this.modConfig.sdkPath,
-                        modName: this.modConfig.name
-                    }
+                    editorTemplateParams
                 )
             }
         }

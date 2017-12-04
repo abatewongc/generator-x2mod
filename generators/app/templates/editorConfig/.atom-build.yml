@@ -11,10 +11,10 @@ sh: true
 env:
   modName: "'<%= modName %>'"                                                                         # your mod's name - this shouldn't have spaces or special characters, and it's usually the name of the first directory inside your mod's source dir
   srcDir: "'C:/Users/your_name/Documents/Firaxis ModBuddy/XCOM - War of the Chosen/<%= modName %>/'"  # the path that contains your mod's .XCOM_sln
-  sdkPath: "'<%= sdkPath %>'"                                                                         # the path to your SDK installation ending in "XCOM 2 War of the Chosen SDK"
-  gamePath: "'<%= gamePath %>'"                                                                       # the path to your XCOM 2 installation ending in "XCOM 2"
+  sdkPath: "'<%- sdkPath %>'"                                                                         # the path to your SDK installation ending in "XCOM 2 War of the Chosen SDK"
+  gamePath: "'<%- gamePath %>'"                                                                       # the path to your XCOM 2 installation ending in "XCOM 2"
   PSPath: "C:\\WINDOWS\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"                            # the path to your installation of powershell
-  amlPath: "'<%= amlPath %>''"                                                                        # the path to your installation of the community alternative mod uploader
+  amlPath: "'<%- amlPath %>''"                                                                        # the path to your installation of the community alternative mod uploader
 targets:
   run:
     name: run

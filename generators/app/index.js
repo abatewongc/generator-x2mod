@@ -1,7 +1,9 @@
-var Generator = require('yeoman-generator');
-var yosay = require('yosay');
+const Generator = require('yeoman-generator');
+const yosay = require('yosay');
 const chalk = require('chalk');
 const ModNameRegex = /^[A-Z][\w+]*$/i;
+const path = require('path');
+const DefaultInstallationPathsService = require('../../services/service.getDefaultInstallationPaths');
 
 module.exports = class extends Generator {
     constructor(args, opts) {
@@ -41,12 +43,13 @@ module.exports = class extends Generator {
             type: 'input',
             name: 'friendlyName',
             message: 'What\'s your mod\'s friendly name? (This is what players will see on Steam.)',
-            default: this.options.modName
+            default: this.options.modName || 'My Sweet Mod!'
         };
 
         return this.prompt(namePrompt).then((answer) => {
             this.modConfig.friendlyName = answer.friendlyName;
             this.modConfig.name = this.modConfig.name || this._createLegalModName(this.modConfig.friendlyName);
+            this.defaultInstallationPaths = DefaultInstallationPathsService.getDefaultInstallationPaths();
 
             const prompts = [{
                 type: 'input',
@@ -81,14 +84,14 @@ module.exports = class extends Generator {
             }, {
                 type: 'input',
                 name: 'gamePath',
-                message: 'Where\'s XCOM 2 installed (ending in "/XCOM 2")?',
-                default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2',
+                message: 'Where\'s XCOM 2 installed (ending in "\\XCOM 2")?',
+                default: this.defaultInstallationPaths.gamePath,
                 when: (answers) => answers.editor
             }, {
                 type: 'input',
                 name: 'sdkPath',
-                message: 'Where\'s the SDK installed (ending in "/XCOM 2 War of the Chosen SDK")?',
-                default: 'C:/Program Files (x86)/Steam/steamapps/common/XCOM 2 War of the Chosen SDK',
+                message: 'Where\'s the SDK installed (ending in "\\XCOM 2 War of the Chosen SDK")?',
+                default: this.defaultInstallationPaths.sdkPath,
                 when: (answers) => answers.editor
             }];
 
@@ -126,8 +129,8 @@ module.exports = class extends Generator {
                     this.templatePath('editorConfig/.vscode/tasks.json'),
                     this.destinationPath('.vscode/tasks.json'),
                     {
-                        gamePath: this.modConfig.gamePath,
-                        sdkPath: this.modConfig.sdkPath,
+                        gamePath: this.modConfig.gamePath.replace('\\', '\\\\'),
+                        sdkPath: this.modConfig.sdkPath.replace('\\', '\\\\'),
                         modName: this.modConfig.name
                     }
                 );

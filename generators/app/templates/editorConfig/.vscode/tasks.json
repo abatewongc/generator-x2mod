@@ -4,7 +4,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/build.ps1' -mod '<%= modName %>' -srcDirectory '${workspaceRoot}/src' -sdkPath '<%= sdkPath %>' -gamePath '<%= gamePath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/build.ps1' -mod '<%= modName %>' -srcDirectory '${workspaceRoot}/src' -sdkPath '<%- sdkPath %>' -gamePath '<%- gamePath %>'",
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -14,7 +14,7 @@
         {
             "label": "debug",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/run.ps1' -gamePath '<%= gamePath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/run.ps1' -gamePath '<%- gamePath %>'",
             "problemMatcher": []
         },
         {
@@ -26,7 +26,7 @@
         {
             "label": "runUnrealEditor",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath '<%= sdkPath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath '<%- sdkPath %>'",
             "problemMatcher": []
         }
     ]

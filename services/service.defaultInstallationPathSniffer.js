@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-module.exports = {
+module.exports = class {
     getDefaultInstallationPaths() {
         let allDrives = "CDEFGHIJKLMNOPQRSTUVWXYZAB".split("");
         let result;
@@ -14,14 +14,14 @@ module.exports = {
         }
 
         return this.composePaths("C:");
-    },
+    }
 
     composePaths(steamDirectory) {
         return {
             gamePath: path.join(steamDirectory, 'XCOM 2'),
             sdkPath: path.join(steamDirectory, 'XCOM 2 War of the Chosen SDK')
         };
-    },
+    }
 
     checkDrive(driveLetter) {
         var rootPath = path.join(`${driveLetter}:`, 'Steam', 'steamapps', 'common');

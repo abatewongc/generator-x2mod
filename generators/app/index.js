@@ -1,10 +1,16 @@
 const Generator = require('yeoman-generator');
-const yosay = require('yosay');
-const chalk = require('chalk');
+const WelcomeService = require('../../services/service.welcome');
 
 module.exports = class extends Generator {
     constructor(args, opts) {
         super(args, opts);
+
+        this.option('welcomeMessage', {
+            description: 'The message that gets appended to the standard "Welcome to the community yo generator" thing',
+            type: String,
+            hide: true,
+            default: 'Let\'s make a mod!'
+        });
 
         let options = {
             modConfigContext: {} // need a common context for generators that need to read/write the mod's info
@@ -14,6 +20,11 @@ module.exports = class extends Generator {
     }
 
     prompting() {
-        this.log(yosay(`${chalk.bold('Hello, commander')}.\n\nWelcome to the community X2 mod generator!`));
+        let welcomeService = new WelcomeService(this);
+        welcomeService.welcome(this.options.welcomeMessage);
+    }
+
+    end() {
+        this.log('Thanks for using yo x2mod! Go forth and make sweet mods!');
     }
 }

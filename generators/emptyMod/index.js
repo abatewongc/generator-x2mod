@@ -6,7 +6,7 @@ module.exports = class extends Generator {
     constructor(args, opts) {
         super(args, opts);
 
-        this.modConfigService = new ModConfigService(opts.modConfigContext);
+        this.modConfigService = new ModConfigService(this.options.modConfigContext);
         this.modNameService = new ModNameService();
     }
 

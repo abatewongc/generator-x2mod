@@ -7,7 +7,7 @@ module.exports = class extends Generator {
         super(args, opts);
 
         this.installationPathSniffer = new DefaultInstallationPathSniffer();
-        this.modConfigContext = opts.modConfigContext;
+        this.modConfigService = new ModConfigService(opts.modConfigContext);
     }
 
     prompting() {
@@ -56,12 +56,11 @@ module.exports = class extends Generator {
                 this.destinationPath('scripts')
             );
 
-            // path.join uses single backslashes which causes problems in json/yml/other config files
-            let modConfigService = new ModConfigService(this.modConfigContext);
             let editorTemplateParams = {
+                // path.join uses single backslashes which causes problems in json/yml/other config files
                 gamePath: this.editorConfig.gamePath.replace(/\\/g, '/'),
                 sdkPath: this.editorConfig.sdkPath.replace(/\\/g, '/'),
-                modName: modConfigService.getSafeName()
+                modName: this.modConfigService.getSafeName()
             };
 
             // TODO: some kind of injectable service? subgenerator?

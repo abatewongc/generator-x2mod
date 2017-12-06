@@ -12,11 +12,12 @@ module.exports = class extends Generator {
             default: 'Let\'s make a mod!'
         });
 
-        let options = {
-            modConfigContext: {} // need a common context for generators that need to read/write the mod's info
-        };
-        this.composeWith('x2mod:emptyMod', options);
-        this.composeWith('x2mod:editorTaskConfig', options);
+        if (!this.options.modConfigContext) {
+            this.options.modConfigContext = modConfigContext;
+        }
+
+        this.composeWith('x2mod:emptyMod', this.options);
+        this.composeWith('x2mod:editorTaskConfig', this.options);
     }
 
     prompting() {

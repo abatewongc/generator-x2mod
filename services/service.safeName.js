@@ -1,19 +1,19 @@
 module.exports = class {
-    construtor(defaultSafeName = 'MySweetMod') {
+    constructor(defaultSafeName = 'SweetSafeName') {
         this.defaultSafeName = defaultSafeName;
     }
 
-    createLegalModNameFrom(friendlyName) {
+    createSafeNameFrom(friendlyName) {
         let result = friendlyName.replace(/[^a-zA-Z0-9_]/ig, '');
 
-        if (!this.isLegalModName(result)) {
+        if (!this.isSafeName(result)) {
             return this.defaultSafeName;
         }
 
         return result;
     }
 
-    isLegalModName(input) {
+    isSafeName(input) {
         if (/^[A-Z][\w+]*$/i.test(input)) {
             return input;
         }

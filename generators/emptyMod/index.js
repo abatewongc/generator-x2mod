@@ -1,5 +1,5 @@
 const Generator = require('yeoman-generator');
-const ModNameService = require('../../services/service.modName');
+const SafeNameService = require('../../services/service.safeName');
 const ModConfigService = require('../../services/service.modConfig');
 
 module.exports = class extends Generator {
@@ -7,7 +7,7 @@ module.exports = class extends Generator {
         super(args, opts);
 
         this.modConfigService = new ModConfigService(this.options.modConfigContext);
-        this.modNameService = new ModNameService();
+        this.safeNameService = new SafeNameService();
     }
 
     prompting() {
@@ -30,7 +30,7 @@ module.exports = class extends Generator {
             name: 'name',
             message: 'What\'s your mod\'s "safe" name? (should start with a capital letter and have only letters, numbers, and underscores)',
             default: (answers) => {
-                return this.modNameService.createLegalModNameFrom(answers.friendlyName);
+                return this.safeNameService.createSafeNameFrom(answers.friendlyName);
             }
         }];
 

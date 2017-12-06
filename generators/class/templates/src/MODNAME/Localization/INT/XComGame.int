@@ -1,0 +1,40 @@
+;-------------------------------------------------------------
+; CLASS DEFINITION
+;-------------------------------------------------------------
+[<%- classSafeName %> X2SoldierClassTemplate]
++DisplayName="<%- classFriendlyName %>"
++ClassSummary="Enter a cool description for your custom class here!"
++LeftAbilityTreeTitle="Lefty Skills"
++RightAbilityTreeTitle="Righty Skills"
++AbilityTreeTitles[0]="Lefty Skills"
++AbilityTreeTitles[1]="Righty skills"
++AbilityTreeTitles[2]="XCOM"
+
+; NICKS
++RandomNickNames="Make"
++RandomNickNames="These"
++RandomNickNames="Custom"
++RandomNickNames="Nicknames"
++RandomNickNames="For"
++RandomNickNames="Your"
++RandomNickNames="Class!"
++RandomNickNames="Get it?"
+
++RandomNickNames_Female="Some"
++RandomNickNames_Female="For"
++RandomNickNames_Female="The"
++RandomNickNames_Female="Ladies"
+
++RandomNickNames_Male="Some"
++RandomNickNames_Male="For"
++RandomNickNames_Male="The"
++RandomNickNames_Male="Guys"
+
+;PHOTOBOOTH
++PhotoboothSoloBLines_Female="Cool"
++PhotoboothSoloBLines_Female="Photobooth"
++PhotoboothSoloBLines_Female="Slogan"
+
++PhotoboothSoloBLines_Male="Cool"
++PhotoboothSoloBLines_Male="Photobooth"
++PhotoboothSoloBLines_Male="Slogan"

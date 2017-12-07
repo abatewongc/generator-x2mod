@@ -2,18 +2,15 @@ const Generator = require('yeoman-generator');
 const ModConfigService = require('../../services/service.modConfig');
 const ModFilesService = require('../../services/service.modFiles');
 const SafeNameService = require('../../services/service.safeName');
+require('../../lib/extensions.generator');
 
 module.exports = class extends Generator {
     constructor(args, opts) {
         super(args, opts);
+    }
 
-        let modConfigContext = {};
-        this.modConfigService = new ModConfigService(modConfigContext);
-
-        this.composeWith('x2mod:app', {
-            modConfigContext: modConfigContext,
-            welcomeMessage: 'Let\'s make a class mod!'
-        });
+    initializing() {
+        this.modConfigService = new ModConfigService(this.createModConfigContext());
     }
 
     prompting() {
@@ -37,14 +34,15 @@ module.exports = class extends Generator {
 
     writing() {
         let modFilesService = new ModFilesService(this, this.modConfigService);
+        let loadoutName = `$Loadout_Squaddie_{this.classConfig.classSafeName}`;
 
         modFilesService.copyConfigTemplate('XComClassData.ini', {
             classSafeName: this.classConfig.classSafeName,
-            defaultLoadoutName: `${this.classConfig.classSafeName}_Loadout_Squaddie`
+            defaultLoadoutName: loadoutName
         });
 
         modFilesService.copyConfigTemplate('XComGameData.ini', {
-            defaultLoadoutName: `${this.classConfig.classSafeName}_Loadout_Squaddie`
+            defaultLoadoutName: loadoutName
         });
 
         modFilesService.copyLocalizationFile({

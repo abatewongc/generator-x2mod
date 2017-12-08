@@ -34,7 +34,7 @@ module.exports = class extends Generator {
 
     writing() {
         let modFilesService = new ModFilesService(this, this.modConfigService);
-        let loadoutName = `$Loadout_Squaddie_{this.classConfig.classSafeName}`;
+        let loadoutName = `Loadout_Squaddie_${this.classConfig.classSafeName}`;
 
         modFilesService.copyConfigTemplate('XComClassData.ini', {
             classSafeName: this.classConfig.classSafeName,

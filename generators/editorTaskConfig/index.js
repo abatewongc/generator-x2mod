@@ -1,13 +1,14 @@
 const Generator = require('yeoman-generator');
 const DefaultInstallationPathSniffer = require('../../services/service.defaultInstallationPathSniffer');
 const ModConfigService = require('../../services/service.modConfig.js');
+require('../../lib/extensions.generator');
 
 module.exports = class extends Generator {
     constructor(args, opts) {
         super(args, opts);
 
         this.installationPathSniffer = new DefaultInstallationPathSniffer();
-        this.modConfigService = new ModConfigService(opts.modConfigContext);
+        this.modConfigService = new ModConfigService(this.createModConfigContext());
     }
 
     prompting() {

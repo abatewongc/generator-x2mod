@@ -1,12 +1,13 @@
 const Generator = require('yeoman-generator');
 const SafeNameService = require('../../services/service.safeName');
 const ModConfigService = require('../../services/service.modConfig');
+require('../../lib/extensions.generator');
 
 module.exports = class extends Generator {
     constructor(args, opts) {
         super(args, opts);
 
-        this.modConfigService = new ModConfigService(this.options.modConfigContext);
+        this.modConfigService = new ModConfigService(this.createModConfigContext());
         this.safeNameService = new SafeNameService();
     }
 

@@ -1,0 +1,2 @@
+[<%- modSafeName %>_BodyPartTemplate_<%- voiceSafeName %> X2BodyPartTemplate]
+DisplayName="<%- voiceFriendlyName %>"

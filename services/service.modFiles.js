@@ -15,6 +15,15 @@ module.exports = class {
         );
     }
 
+    copyContentFile(contentFileName, destinationFileName = null) {
+        if (!destinationFileName) destinationFileName = contentFileName;
+
+        this.generator.fs.copy(
+            `src/MODNAME/Content/${contentFileName}`,
+            `src/${this.modConfigService.getSafeName()}/Content/${destinationFileName}`
+        );
+    }
+
     copyScriptTemplate(templateFileName) {
         let modName = this.modConfigService.getSafeName();
         this.generator.fs.copyTpl(

@@ -19,8 +19,8 @@ module.exports = class {
         if (!destinationFileName) destinationFileName = contentFileName;
 
         this.generator.fs.copy(
-            `src/MODNAME/Content/${contentFileName}`,
-            `src/${this.modConfigService.getSafeName()}/Content/${destinationFileName}`
+            this.generator.templatePath(`src/MODNAME/Content/${contentFileName}`),
+            this.generator.destinationPath(`src/${this.modConfigService.getSafeName()}/Content/${destinationFileName}`)
         );
     }
 

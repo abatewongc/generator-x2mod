@@ -43,7 +43,7 @@ module.exports = class extends Generator {
 
         modFilesService.copyContentFile(
             'ModSafeName_VoiceSafeName.upk',
-            `${this.modConfigService.getSafeName()}_${this.voiceConfig.voiceSafeName}`
+            `${this.modConfigService.getSafeName()}_${this.voiceConfig.voiceSafeName}.upk`
         );
     }
 }

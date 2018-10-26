@@ -40,6 +40,10 @@ module.exports = class extends Generator {
             message: 'Where\'s the SDK installed (ending in "\\XCOM 2 War of the Chosen SDK")?',
             default: defaultInstallationPaths.sdkPath,
             when: (answers) => answers.editor
+        }, {
+            type: 'input',
+            name: 'amlPath',
+            message: 'Where\'s the Alternate Mod Uploader installed (absolute path to the .exe)? Leave blank if you don\'t use the AML.'
         }];
 
         return this.prompt(prompts).then(answers => {
@@ -47,6 +51,7 @@ module.exports = class extends Generator {
             this.editorConfig.editor = answers.editor;
             this.editorConfig.gamePath = answers.gamePath;
             this.editorConfig.sdkPath = answers.sdkPath;
+            this.editorConfig.amlPath = answers.amlPath;
         });
     }
 
@@ -61,6 +66,7 @@ module.exports = class extends Generator {
                 // path.join uses single backslashes which causes problems in json/yml/other config files
                 gamePath: this.editorConfig.gamePath.replace(/\\/g, '/'),
                 sdkPath: this.editorConfig.sdkPath.replace(/\\/g, '/'),
+                amlPath: this.editorConfig.amlPath.replace(/\\/g, '/'),
                 modName: this.modConfigService.getSafeName()
             };
 

@@ -20,7 +20,7 @@
         {
             "label": "publish",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath 'E:/Devspace/XCOM 2 Mods/alternative-mod-uploader/Binaries/Firaxis.SteamWorkshop.exe'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath '<%- amlPath %>'",
             "problemMatcher": []
         },
         {

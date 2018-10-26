@@ -6,9 +6,14 @@ Welcome to `yo x2mod`, a Yeoman generator for mods for Firaxis' XCOM 2!
 ## How do I get started?
 First, get [node](https://nodejs.org/en/download/) and [npm](https://www.npmjs.com/). (NPM comes with node if you don't already have either one.) Then open a terminal, powershell, or command shell and get ready to experience Yeoman magic:
 
+First, install Yeoman and the XCOM2 mod generator.
 ```
-npm i -g yo                    // you'll only have to do these two
-npm i -g generator x2mod       // the first time you use generator-x2mod
+npm i -g yo generator-x2mod
+```
+
+Great. Now you can use Yeoman to create an XCOM2 mod.
+
+```
 yo x2mod
 ```
 

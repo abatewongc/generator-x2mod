@@ -24,24 +24,337 @@ function StageDirectory ([string]$directoryName, [string]$srcDirectory, [string]
 
 function CheckErrorCode([string] $message) {
     if ($LASTEXITCODE -ne 0) {
-        throw $message;
+        $stopwatch.stop();
+        $ts = $stopwatch.Elapsed.TotalSeconds;
+
+        Write-Host "Build failed in $ts seconds.";
+        FailureMessage  $message;
+        
     }
 }
+
+#!!!!!!!!!!!! NOTE THESE MAY SOUND THE SAME IF NOT CONFIGURED !!!!!!!!!!!!!!!#
+function FailureMessage($message)
+{
+    [System.Media.SystemSounds]::Asterisk.Play();
+    throw $message
+}
+
+function SuccessMessage($message)
+{
+    $stopwatch.stop()
+    $ts = $stopwatch.Elapsed.TotalSeconds;
+
+    [System.Media.SystemSounds]::Exclamation.Play();
+    Write-Host $message
+    Write-Host "$modNameCanonical ready to run in $ts seconds."
+}
+
+# Helper for invoking the make cmdlet. Captures stdout/stderr and rewrites error and warning lines to fix up the
+# source paths. Since make operates on a copy of the sources copied to the SDK folder, diagnostics print the paths
+# to the copies. If you try to jump to these files (e.g. by tying this output to the build commands in your editor)
+# you'll be editting the copies, which will then be overwritten the next time you build with the sources in your mod folder
+# that haven't been changed.
+function Launch-Make([string] $makeCmd, [string] $makeFlags, [string] $sdkPath, [string] $modSrcRoot) {
+    # Create a ProcessStartInfo object to hold the details of the make command, its arguments, and set up
+    # stdout/stderr redirection.
+    $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+    $pinfo.FileName = $makeCmd
+    $pinfo.RedirectStandardOutput = $true
+    $pinfo.RedirectStandardError = $true
+    $pinfo.UseShellExecute = $false
+    $pinfo.Arguments = $makeFlags
+
+    # Create an object to hold the paths we want to rewrite: the path to the SDK 'Development' folder
+    # and the 'modSrcRoot' (the directory that holds the .x2proj file). This is needed because the output
+    # is read in an action block that is a separate scope and has no access to local vars/parameters of this
+    # function.
+    $developmentDirectory = Join-Path -Path $sdkPath 'Development'
+    $messageData = New-Object psobject -property @{
+        developmentDirectory = $developmentDirectory;
+        modSrcRoot = $modSrcRoot
+    }
+
+    # We need another object for the Exited event to set a flag we can monitor from this function.
+    $exitData = New-Object psobject -property @{ exited = $false }
+
+    # An action for handling data written to stdout. The make cmdlet writes all warning and error info to
+    # stdout, so we look for it here.
+    $outAction = {
+        $outTxt = $Event.SourceEventArgs.Data
+        # Match warning/error lines
+        if ($outTxt -Match "Error|Warning") {
+            # And just do a regex replace on the sdk Development directory with the mod src directory.
+            # The pattern needs escaping to avoid backslashes in the path being interpreted as regex escapes, etc.
+            $pattern = [regex]::Escape($event.MessageData.developmentDirectory)
+            # n.b. -Replace is case insensitive
+            $replacementTxt = $outtxt -Replace $pattern, $event.MessageData.modSrcRoot
+            Write-Host $replacementTxt
+        } else {
+            Write-Host $outTxt
+        }
+    }
+
+    # An action for handling data written to stderr. The make cmdlet doesn't seem to write anything here,
+    # or at least not diagnostics, so we can just pass it through.
+    $errAction = {
+        $errTxt = $Event.SourceEventArgs.Data
+        Write-Host $errTxt
+    }
+
+    # Set the exited flag on our exit object on process exit.
+    $exitAction = {
+        $event.MessageData.exited = $true
+    }
+
+    # Create the process and register for the various events we care about.
+    $process = New-Object System.Diagnostics.Process
+    Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -Action $outAction -MessageData $messageData | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName ErrorDataReceived -Action $errAction | Out-Null
+    Register-ObjectEvent -InputObject $process -EventName Exited -Action $exitAction -MessageData $exitData | Out-Null
+    $process.StartInfo = $pinfo
+
+    # All systems go!
+    $process.Start() | Out-Null
+    $process.BeginOutputReadLine()
+    $process.BeginErrorReadLine()
+
+    # Wait for the process to exit. This is horrible, but using $process.WaitForExit() blocks
+    # the powershell thread so we get no output from make echoed to the screen until the process finishes.
+    # By polling we get regular output as it goes.
+    while (!$exitData.exited) {
+        Start-Sleep -m 50
+    }
+
+    # Explicitly set LASTEXITCODE from the process exit code so the rest of the script
+    # doesn't need to care if we launched the process in the background or via "&".
+    $global:LASTEXITCODE = $process.ExitCode
+}
+
+# This function verifies that all project files in the mod subdirectories actually exist in the .x2proj file
+# AUTHOR: X2WOTCCommunityHighlander
+
+function ValidateProjectFile([string] $modProjectRoot, [string] $modName)
+{
+    # To simplify relative path building
+    $originalExecutionPath = Get-Location
+    Set-Location $modProjectRoot
+
+    Write-Host "Checking and cleaning .x2proj file..."
+    $projFilepath = "$modProjectRoot\$modName.x2proj"
+    if(Test-Path $projFilepath)
+    {
+        CheckX2ProjIncludes $modProjectRoot $modName $projFilepath
+        CleanX2ProjIncludes $modProjectRoot $modName $projFilepath
+    }
+    else
+    {
+        FailureMessage("The project file '$projFilepath' doesn't exist!")
+    }
+
+    # fuck go back
+    Set-Location $originalExecutionPath
+}
+
+function CheckX2ProjIncludes([string] $modProjectRoot, [string] $modName, [string] $projFilepath) {
+    $missingEntries = New-Object System.Collections.Generic.List[System.Object]
+    $patchedFiles = New-Object System.Collections.Generic.List[System.Object]
+    $patchedFolders = New-Object System.Collections.Generic.List[System.Object]
+    $projContent = Get-Content $projFilepath
+    $srcFolders = "Config", "Content", "Localization", "Src"
+    # Loop through all files in subdirectories and fail the build if any filenames are missing inside the project file
+    Get-ChildItem $modProjectRoot -Directory | Where-Object { $srcFolders -contains $_.Name } | Get-ChildItem -Recurse |
+    ForEach-Object {
+        $relative = Resolve-Path -relative $_.FullName
+        $relative = $relative.Substring(2)
+        if((Get-Item $_.FullName) -is [System.IO.DirectoryInfo]) {
+            $relative = $relative + "\"
+            $isDir = $true
+        }
+
+        If (!($projContent | Select-String -Pattern $_.Name)) {
+            $missingEntries.Add($relative)
+            if($isDir) {
+                $patchedFolders.Add($relative)
+            } else {
+                $patchedFiles.Add($relative);
+            }
+        }
+        $isDir = $false
+    }
+
+    if($missingEntries.Count -gt 0)
+    {
+        Write-Host ("Entries missing in the .x2proj file: $missingEntries")
+        [xml]$xmlProjContent = Get-Content $projFilepath
+
+        $patchedFiles | ForEach-Object {
+            $element = $xmlProjContent.CreateElement("Content")
+            $element.SetAttribute("Include", $_)
+            $xmlProjContent.Project.ItemGroup[1].AppendChild($element) | Out-Null
+        }
+
+        $patchedFolders | ForEach-Object {
+            $element = $xmlProjContent.CreateElement("Folder")
+            $element.SetAttribute("Include", $_)
+            $xmlProjContent.Project.ItemGroup[0].AppendChild($element) | Out-Null
+        }
+
+        # I couldn't prevent a xmlns namespace from being declared, so just hard removing it T_T
+        $xmlProjContent = [xml] $xmlProjContent.OuterXml.Replace(" xmlns=`"`"", "")
+        $xmlProjContent.save("$modProjectRoot\$modName.x2proj")
+
+        Write-Host "Patched $modName.x2proj includes successfully!"
+    } else {
+        Write-Host "No patching required."
+    }
+
+}
+
+function CleanX2ProjIncludes([string] $modProjectRoot, [string] $modName, [string] $projFilepath) {
+    # TODO
+    [xml]$xmlProjContent = Get-Content $projFilepath
+    $presentFiles = New-Object System.Collections.Generic.List[System.Object]
+    $includesToRemove = New-Object System.Collections.Generic.List[System.Object]
+    $entriesToRemove = New-Object System.Collections.Generic.List[System.Object]
+    $presentFolders = New-Object System.Collections.Generic.List[System.Object]
+    $srcFolders = "Config", "Content", "Localization", "Src"
+    Get-ChildItem $modProjectRoot -Directory -Recurse | Where-Object { $srcFolders -contains $_.Name } | Get-ChildItem -Recurse |
+    ForEach-Object {
+        $relative = Resolve-Path -relative $_.FullName
+        $relative = $relative.Substring(2)
+
+        if((Get-Item $_.FullName) -is [System.IO.DirectoryInfo]) {
+            $presentFolders.Add($relative + "\");
+        } else {
+            $presentFiles.Add($relative);
+        }
+    }
+
+    # check folder includes...
+    $srcFolders = "Config\", "Content\", "Localization\", "Src\"
+    $folders = $xmlProjContent.Project.ItemGroup[0].ChildNodes
+    $folders | ForEach-Object {
+        $include = $_.GetAttribute("Include");
+        if(!($presentFolders -contains $include -or $srcFolders -contains $include)) {
+            $entriesToRemove.Add($_)
+            $includesToRemove.Add($include)
+        }
+    }
+
+     # check file includes...
+    $hardCodedExceptions = "ReadMe.txt", "ModPreview.jpg"
+    $files = $xmlProjContent.Project.ItemGroup[1].ChildNodes
+    $files | ForEach-Object {
+        $include = $_.GetAttribute("Include");
+        if(!($presentFiles -contains $include -or $hardCodedExceptions -contains $include)) {
+            $entriesToRemove.Add($_)
+            $includesToRemove.Add($include)
+        }
+    }
+
+    if($entriesToRemove.Count -gt 0) {
+        Write-Host ("Invalid entries in the .x2proj file: $includesToRemove")
+        $entriesToRemove | ForEach-Object {
+            try {
+                $_.ParentNode.RemoveChild($_) | Out-Null
+            } catch {
+                FailureMessage("Couldn't remove child node!")
+            }
+            
+        }
+        
+        $xmlProjContent.save("$modProjectRoot\$modName.x2proj")
+        Write-Host "Cleaned $modName.x2proj includes successfully!"
+    } else {
+        Write-Host "No cleaning required."
+    }
+}
+
+function HaveDirectoryContentsChanged ([string] $srcDirPath, [string] $destDirPath) {
+    $srcDir = Get-ChildItem $srcDirPath
+    $destDir = Get-ChildItem $destDirPath
+
+    # quick check, obviously if there's more files in one location, there's been a change
+    # also the code below doesn't check to see if a file has been removed
+    if($srcDir.Length -ne $destDir.Length) {
+        return $true
+    }
+
+    # cp'd directly from stackoverflow
+    $DiffFound = Get-ChildItem $srcDirPath | Where-Object {
+        ($_ | Get-FileHash).Hash -ne (Get-FileHash (Join-Path $destDirPath $_.Name)).Hash
+    } 
+
+    return $DiffFound
+}
+
+# Let's see how long this takes...
+$stopwatch = New-Object System.Diagnostics.Stopwatch
+$stopwatch.Start()
 
 # alias params for clarity in the script (we don't want the person invoking this script to have to type the name -modNameCanonical)
 $modNameCanonical = $mod
 # we're going to ask that people specify the folder that has their .XCOM_sln in it as the -srcDirectory argument, but a lot of the time all we care about is
 # the folder below that that contains Config, Localization, Src, etc...
 $modSrcRoot = "$srcDirectory/$modNameCanonical"
-Write-Host "Building mod $mod from source root $modSrcRoot..."
+
+# check that all files in the mod folder are present in the .x2proj file
+ValidateProjectFile $modSrcRoot $modNameCanonical
+
+# build the staging path
+$stagingPath = "{0}/XComGame/Mods/{1}/" -f $sdkPath, $modNameCanonical
+
+# determine whether or not there are changes to the Content directory before we clean
+# used later to determine if we can skip shader precompilation
+$shaderCachePath = "{0}/Content/{1}_ModShaderCache.upk" -f $stagingPath, $modNameCanonical
+$tempCachePath = "{0}/tmp/{1}_ModShaderCache.upk" -f $modSrcRoot, $modNameCanonical
+
+$canSkipShaderPrecompliation = $false
+
+# Need to store the ModShaderCache before we compare the Content directories, it will interfere with the check.
+# Also, if there are no changes and we skip precompliation, we will need a backup of the ModShaderCache since it won't be regenerated after the stagingPath is cleaned.
+#if(Test-Path $tempCachePath) {
+#    # if we found a shadercache in here, that means that we found it last time and cached it, but the build failed and /tmp wasn't cleaned up... we can skip precompliation.
+#    $canSkipShaderPrecompliation = $true
+#    Write-Host "Found previously-stashed ModShaderCache. Shader precompliation can be skipped."
+#} elseif(Test-Path $shaderCachePath) {
+#    Write-Host "Found ModShaderCache, stashing it..."
+#    
+#    if(-not (Test-Path -Path $modSrcRoot/tmp)) {
+#        New-Item $modSrcRoot/tmp -type Directory
+#    } 
+#    
+#    Copy-Item -Path $shaderCachePath -Destination $tempCachePath
+#    Remove-Item -Path $shaderCachePath
+#    $canSkipShaderPrecompliation = $true
+#    
+#    Write-Host "Stashed."
+#} else {
+#    Write-Host "Unable to find a ModShaderCache. Shader precompliation is required."
+#}
+
+# check to see if the files changed
+if($canSkipShaderPrecompliation) {
+    $canSkipShaderPrecompliation = -not (HaveDirectoryContentsChanged $modSrcRoot/Content $stagingPath/Content)
+}
+
+if($canSkipShaderPrecompliation) {
+    Write-Host "Can skip shader precompliation."
+} else {
+    Write-Host "Can't skip shader precompliation."
+    if(Test-Path $tempCachePath) {
+        Remove-Item -Path $tempCachePath
+        Remove-Item -path $modSrcRoot/tmp
+    }
+}
 
 # clean
-$stagingPath = "{0}/XComGame/Mods/{1}/" -f $sdkPath, $modNameCanonical
+Write-Host "Cleaning mod project at $stagingPath...";
 if (Test-Path $stagingPath) {
-    Write-Host "Cleaning mod project at $stagingPath...";
-    Remove-Item $stagingPath -Recurse -WarningAction SilentlyContinue;
-    Write-Host "Cleaned."
+    Remove-Item $stagingPath -Recurse -Force -WarningAction SilentlyContinue;
 }
+Write-Host "Cleaned."
 
 # copy source to staging
 StageDirectory "Config" $modSrcRoot $stagingPath
@@ -50,38 +363,21 @@ StageDirectory "Localization" $modSrcRoot $stagingPath
 StageDirectory "Src" $modSrcRoot $stagingPath
 New-Item "$stagingPath/Script" -ItemType Directory
 
-# create mod metadata (.xcommod) file - used by Firaxis' "make" tooling
-$x2projPath = "$modSrcRoot/$modNameCanonical.x2proj"
-$xcomModPath = "$srcDirectory/$modNameCanonical.XComMod"
+# read mod metadata from the x2proj file
+
+Write-Host "Reading mod metadata from $modSrcRoot/$modNameCanonical.x2proj..."
+[xml]$x2projXml = Get-Content -Path "$modSrcRoot/$modNameCanonical.x2proj"
+$modProperties = $x2projXml.Project.PropertyGroup
+$modPublishedId = $modProperties.SteamPublishedId
+$modTitle = $modProperties.Name
+$modDescription = $modProperties.Description
+Write-Host "Read."
+
+# write mod metadata - used by Firaxis' "make" tooling
+Write-Host "Writing mod metadata..."
 $metadataPublishPath = "$sdkPath/XComGame/Mods/$modNameCanonical/$modNameCanonical.XComMod"
-
-if (Test-Path $x2projPath) {
-    # if the mod source contains an x2proj (created with ModBuddy), use it to compose and write the metadata
-    Write-Host "This mod has an x2proj file at $x2projPath. Reading metadata from there..."
-
-    [xml]$x2projXml = Get-Content -Path "$modSrcRoot/$modNameCanonical.x2proj"
-    $modProperties = $x2projXml.Project.PropertyGroup
-    $modPublishedId = $modProperties.SteamPublishedId
-    $modTitle = $modProperties.Name
-    $modDescription = $modProperties.Description
-    Write-Host "Read."
-
-    # write mod metadata based on x2proj xml
-    Write-Host "Writing mod metadata to $metadataPublishPath..."
-    WriteModMetadata -writeTo $metadataPublishPath -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription
-    Write-Host "Written."
-}
-elseif (Test-Path $xcomModPath) {
-    # if the mod already has an .xcommod file in its root (hopefully created with the Yeoman generator?), just copy
-    # that to the appropriate location
-    Write-Host "This mod has an .XComMod file at $xcomModPath. Copying it to the publish location."
-    Write-Host "Copying to $metadataPublishPath..."
-    Copy-Item $xcomModPath -Destination $metadataPublishPath -Force
-    Write-Host "Copied."
-}
-else {
-    throw "Metadata for your mod couldn't be created. This is usually because you have neither an .x2proj or .XComMod file in your source directory's root."
-}
+WriteModMetadata -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription -writeTo $metadataPublishPath
+Write-Host "Written."
 
 # mirror the SDK's SrcOrig to its Src
 Write-Host "Mirroring SrcOrig to Src..."
@@ -92,6 +388,15 @@ Write-Host "Mirrored."
 Write-Host "Copying the mod's scripts to Src..."
 Copy-Item "$stagingPath/Src/*" "$sdkPath/Development/Src/" -Force -Recurse -WarningAction SilentlyContinue
 Write-Host "Copied."
+
+# append extra_globals.uci to globals.uci
+if (Test-Path "$sdkPath/Development/Src/$modNameCanonical/Classes/extra_globals.uci") {
+    Write-Host "Appending macros..."
+    Get-Content "$sdkPath/Development/Src/$modNameCanonical/Classes/extra_globals.uci" | Add-Content "$sdkPath/Development/Src/Core/Globals.uci"
+    Write-Host "Appended."
+} else {
+    Write-Host "Couldn't find an extra_globals.uci to append extra macros..."
+}
 
 if ($forceFullBuild) {
     # if a full build was requested, clean all compiled scripts too
@@ -106,24 +411,32 @@ else {
     if (Test-Path "$sdkPath\XComGame\Script\$modNameCanonical.u") {
         Remove-Item "$sdkPath\XComGame\Script\$modNameCanonical.u"
     }
-    
+
     Write-Host "Cleaned."
 }
 
 # build the base game scripts
 Write-Host "Compiling base game scripts..."
+# This could be replaced with a Launch-Make call as well for highlanders.
 & "$sdkPath/binaries/Win64/XComGame.com" make -nopause -unattended
 Write-Host "Compiled."
 CheckErrorCode "Failed to compile the base game scripts. This probably isn't a problem with your mod. Have you been monkeying around with SrcOrig, perchance?"
 
 # build the mod's scripts
 Write-Host "Compiling mod scripts..."
-&"$sdkPath/binaries/Win64/XComGame.com" make -nopause -mods $modNameCanonical "$stagingPath"
+Launch-Make "$sdkPath/binaries/Win64/XComGame.com" "make -nopause -mods $modNameCanonical $stagingPath" $sdkPath $modSrcRoot
 CheckErrorCode "Failed to compile mod scripts."
 Write-Host "Compiled."
 
 # build the mod's shader cache
-if (Test-Path -Path "$stagingPath/Content/*" -Include *.upk, *.umap) {
+if ($canSkipShaderPrecompliation) {
+    Write-Host "There were no changes to content. Reloading previous ModShaderCache and skipping shader precompliation."
+    Copy-Item -Path $tempCachePath -Destination $shaderCachePath
+    Remove-Item -Path $tempCachePath
+    Remove-Item -path $modSrcRoot/tmp
+    Write-Host "Reloaded."
+} 
+elseif (Test-Path -Path "$stagingPath/Content/*" -Include *.upk, *.umap) {
     Write-Host "Precompiling mod shaders..."
     &"$sdkPath/binaries/Win64/XComGame.com" precompileshaders -nopause platform=pc_sm4 DLC=$modNameCanonical
     CheckErrorCode "Failed to precompile mod shaders."
@@ -139,14 +452,10 @@ Copy-Item "$sdkPath/XComGame/Script/$modNameCanonical.u" "$stagingPath/Script" -
 Write-Host "Copied."
 
 # copy all staged files to the actual game's mods folder
-$productionPath = "$gamePath/XCom2-WarOfTheChosen/XComGame/Mods/"
 Write-Host "Copying all staging files to production..."
-if (-Not (Test-Path $productionPath)) {
-    New-Item $productionPath -ItemType Directory
-}
-Copy-Item $stagingPath $productionPath -Force -Recurse -WarningAction SilentlyContinue
-Write-Host "Copied."
+Robocopy.exe "$stagingPath" "$gamePath\XCom2-WarOfTheChosen\XComGame\Mods\RisingTides" *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /R:1000000 /W:30
+Write-Host "Copied mod to game directory."
+
 
 # we made it!
-Write-Host "*** SUCCESS! ***"
-Write-Host "$modNameCanonical ready to run."
+SuccessMessage("*** SUCCESS! ***")

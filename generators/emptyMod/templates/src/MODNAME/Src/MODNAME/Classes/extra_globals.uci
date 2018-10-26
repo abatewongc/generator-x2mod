@@ -1,0 +1,30 @@
+/**
+ * Copyright 1998-2011 Epic Games, Inc. All Rights Reserved.
+ */
+/**
+ * Globals.uci - Unreal Engine global include file for UnrealScript.
+ * Never include this file before the class definition.
+ */
+/**
+ * EXAMPLE Macro
+ * Expands to an in-line if statement with a log if debug is defined;
+ * it expands to nothing if debug is not defined. The debug macro takes
+ * its value from the -debug flag on the script compilation command line.
+ *
+ * Also demonstrates how to use backslashes to declare a multi-line macro.
+ *
+ * @param	msg		the string that should be logged
+ * @param	cond	[opt] the condition that is used to evaluate whether the message should be written
+ * @param	tag		[opt] the tag for the log statement
+ */
+/*
+`if(`isdefined(debug))
+`define Example(msg,cond,tag)\
+  `if(`cond)\
+	if (`cond)\
+  `{endif}\
+	log(`msg`if(`tag),`tag`endif)
+`else
+`define Example
+`endif
+*/

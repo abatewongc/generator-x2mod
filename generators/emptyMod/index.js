@@ -1,6 +1,7 @@
 const Generator = require('yeoman-generator');
 const SafeNameService = require('../../services/service.safeName');
 const ModConfigService = require('../../services/service.modConfig');
+const mkdir = require('mkdirp');
 require('../../lib/extensions.generator');
 
 module.exports = class extends Generator {
@@ -24,7 +25,7 @@ module.exports = class extends Generator {
         }, {
             type: 'confirm',
             name: 'requireWotC',
-            message: 'Will your mod require the War of the Chosen expansion?',
+            message: 'Will your mod require the War of the Chosen expansion? Defaults to true.',
             default: true
         }, {
             type: 'input',
@@ -48,8 +49,30 @@ module.exports = class extends Generator {
         this._copyConfigTemplate('XComEditor.ini');
         this._copyConfigTemplate('XComEngine.ini');
         this._copyConfigTemplate('XComGame.ini');
-        this._copyScriptTemplate('X2DownloadableContentInfo.uc');
+        this._copyDLCInfoTemplate('X2DownloadableContentInfo.uc');
         this._createModMetadata(this.modConfigService.getFriendlyName(), this.modConfigService.getDescription(), this.modConfigService.getRequiresWotC());
+        this._copyProjectFileTemplates(this.modConfigService.getSafeName(), this.modConfigService.getDescription());
+        this._copyExtraGlobals();
+        this._copyContentFolder();
+        this._copyLocalization();
+    }
+
+    _copyLocalization() {
+        let modName = this.modConfigService.getSafeName();
+        this.fs.copy(
+            this.templatePath(`src/MODNAME/Localization/INT/Mod.int`),
+            this.destinationPath(`src/${modName}/Localization/INT/${modName}.int`)
+        );
+
+        this.fs.copy(
+            this.templatePath(`src/MODNAME/Localization/INT/XComGame.int`),
+            this.destinationPath(`src/${modName}/Localization/INT/XComGame.int`)
+        );
+    }
+
+    _copyContentFolder() {
+        let modName = this.modConfigService.getSafeName();
+        mkdir(this.destinationPath(`src/${modName}/Content/`))
     }
 
     _copyConfigTemplate(configFileName) {
@@ -61,7 +84,7 @@ module.exports = class extends Generator {
         );
     }
 
-    _copyScriptTemplate(templateFileName) {
+    _copyDLCInfoTemplate(templateFileName) {
         let modName = this.modConfigService.getSafeName();
         this.fs.copyTpl(
             this.templatePath(`src/MODNAME/Src/MODNAME/Classes/${templateFileName}`),
@@ -79,6 +102,47 @@ module.exports = class extends Generator {
                 modDescription: description,
                 requireWotC: requireWotC
             }
+        )
+    }
+
+    _copyProjectFileTemplates(title, description) {
+        let modName = this.modConfigService.getSafeName();
+        this.fs.copyTpl(
+            this.templatePath('src/MODNAME/Mod.x2proj'),
+            this.destinationPath(`src/${modName}/${modName}.x2proj`),
+            {
+                modName: title,
+                modDescription: description
+            }
+        )
+
+        this.fs.copyTpl(
+            this.templatePath('src/MODNAME/Readme.txt'),
+            this.destinationPath(`src/${modName}/Readme.txt`),
+            {
+                modDescription: description
+            }
+        )
+
+        this.fs.copy(
+            this.templatePath('src/MODNAME/ModPreview.jpg'),
+            this.destinationPath(`src/${modName}/ModPreview.jpg`)
+        )
+
+        this.fs.copyTpl(
+            this.templatePath('Readme.md'),
+            this.destinationPath('Readme.md'),
+            {
+                modDescription: description
+            }
+        )
+    }
+
+    _copyExtraGlobals() {
+        let modName = this.modConfigService.getSafeName();
+        this.fs.copyTpl(
+            this.templatePath('src/MODNAME/Src/MODNAME/Classes/extra_globals.uci'),
+            this.destinationPath(`src/${modName}/Src/${modName}/Classes/extra_globals.uci`)
         )
     }
 }

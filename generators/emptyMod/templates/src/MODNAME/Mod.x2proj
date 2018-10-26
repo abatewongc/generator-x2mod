@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>0</Guid>
+    <Name><%- modName %></Name>
+    <Description>"<%= modDescription %></Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName><%- modName %></AssemblyName>
+    <RootNamespace><%- modName %></RootNamespace>
+    <ProjectGuid>{0}</ProjectGuid>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Config\" />
+    <Folder Include="Content\" />
+    <Folder Include="Localization\" />
+    <Folder Include="Localization\INT\" />
+    <Folder Include="Src\" />
+    <Folder Include="Src\<%- modName %>\" />
+    <Folder Include="Src\<%- modName %>\Classes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ReadMe.txt" />
+    <Content Include="ModPreview.jpg" />
+    <Content Include="Config\XComEditor.ini" />
+    <Content Include="Config\XComEngine.ini" />
+    <Content Include="Config\XComGame.ini" />
+    <Content Include="Localization\INT\XComGame.int" />
+    <Content Include="Localization\INT\<%= modName %>.int" />
+    <Content Include="Src\<%- modName %>\Classes\extra_globals.uci" />
+    <Content Include="Src\<%- modName %>\Classes\X2DownloadableContentInfo_<%= modName %>.uc" />
+  </ItemGroup>
+  <Import Project="$(MSBuildLocalExtensionPath)\XCOM2.targets" />
+</Project>

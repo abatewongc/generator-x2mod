@@ -44,10 +44,4 @@ Good on you! The cool thing about creating a open source Yeoman generator for mo
 
 ### If I create a mod with this tool and decide I want to go back to a ModBuddy-based workflow, can I do that?
 
-You can, but it's not trivial. `yo x2mod` doesn't make any attempt to masquerade your mod as ModBuddy-compatible - rather than using `.XCOM_sln` and `.x2proj` files like ModBuddy does, it just creates an `.XComMod` file in the source directory that its build script knows to consult when building your mod for development and debugging. If you want to move a mod that was bootstrapped with this generator into a ModBuddy project, the easiest way will likely be to create an empty ModBuddy project with the same safe name as your mod and manually add the mod files into it in the appropriate folder structure. TL;DR - Try before you buy. Migrating back to ModBuddy isn't for the faint of heart. Sorry, though.
-
-### What happens when I want to publish my mod? Don't you need an .x2proj file to publish mods?
-
-Publishing is for suckers. Real modders just stay in development for years to avoid commitment.
-
-I'm kidding. I haven't figured out how I'm going to do this yet, but it seems possible. I need to figure out how the `.x2proj` is used when a mod is uploaded via Steam or the Alternative Mod Uploader and possibly generate a fake one for this purpose if necessary. Details coming. Someday.
+Sure. Make a new project with the same `ModSafeName` and drop your project into it, overwriting the generated `x2proj`.

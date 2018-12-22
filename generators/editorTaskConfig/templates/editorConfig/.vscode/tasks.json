@@ -4,29 +4,39 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/build.ps1' -mod '<%= modName %>' -srcDirectory '${workspaceRoot}/src' -sdkPath '<%- sdkPath %>' -gamePath '<%- gamePath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/build.ps1' -mod '<%= modName %>' -srcDirectory '${workspaceRoot}/src' -sdkPath '${config:mod.sdkpath}' -gamePath '${config:mod.gamepath}'",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": []
+            "problemMatcher": [{
+                "owner": "unrealscript",
+                "fileLocation": ["absolute"],
+                "pattern": {
+                    "regexp": "^(.*)\\(([0-9]*)\\) : (Warning|Error), ([^\n]*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            }]
         },
         {
             "label": "debug",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/run.ps1' -gamePath '<%- gamePath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/run.ps1' -gamePath '${config:mod.gamepath}'",
             "problemMatcher": []
         },
         {
             "label": "publish",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath '<%- amlPath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath '${config:mod.amlpath}'",
             "problemMatcher": []
         },
         {
             "label": "runUnrealEditor",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath '<%- sdkPath %>'",
+            "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath '${config:sdkpath}'",
             "problemMatcher": []
         }
     ]

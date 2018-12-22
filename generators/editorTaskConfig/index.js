@@ -77,6 +77,11 @@ module.exports = class extends Generator {
                     this.destinationPath('.vscode/tasks.json'),
                     editorTemplateParams
                 );
+                this.fs.copyTpl(
+                    this.templatePath('editorConfig/.vscode/settings.json'),
+                    this.destinationPath('.vscode/settings.json'),
+                    editorTemplateParams
+                );
             }
             else if (this.editorConfig.editor === 'atom') {
                 this.fs.copyTpl(

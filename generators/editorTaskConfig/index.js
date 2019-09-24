@@ -70,6 +70,12 @@ module.exports = class extends Generator {
                 modName: this.modConfigService.getSafeName()
             };
 
+            this.fs.copyTpl(
+                this.templatePath('editorConfig/template_gitignore'),
+                this.destinationPath('.gitignore'),
+                editorTemplateParams
+            );
+
             // TODO: some kind of injectable service? subgenerator?
             if (this.editorConfig.editor === 'vscode') {
                 this.fs.copyTpl(

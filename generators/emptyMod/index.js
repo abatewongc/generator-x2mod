@@ -78,7 +78,7 @@ module.exports = class extends Generator {
     _copyConfigTemplate(configFileName) {
         let modName = this.modConfigService.getSafeName();
         this.fs.copyTpl(
-            this.templatePath(`src/MODNAME/config/${configFileName}`),
+            this.templatePath(`src/MODNAME/Config/${configFileName}`),
             this.destinationPath(`src/${modName}/Config/${configFileName}`),
             { modName: modName }
         );

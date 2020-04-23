@@ -6,20 +6,34 @@ Param(
     [bool]$forceFullBuild = $false # force the script to rebuild the base game's scripts, even if they're already built
 )
 
-function WriteModMetadata([string]$mod, [string]$sdkPath, [int]$publishedId, [string]$title, [string]$description, [string]$writeTo) {
-    Set-Content $writeTo "[mod]`npublishedFileId=$publishedId`nTitle=$title`nDescription=$description`nRequiresXPACK=true"
+function WriteModMetadata([string]$mod, [string]$sdkPath, [int]$publishedId, [string]$title, [string]$description) {
+    Set-Content "$sdkPath/XComGame/Mods/$mod/$mod.XComMod" "[mod]`npublishedFileId=$publishedId`nTitle=$title`nDescription=$description`nRequiresXPACK=true"
 }
 
 function StageDirectory ([string]$directoryName, [string]$srcDirectory, [string]$targetDirectory) {
     Write-Host "Staging mod $directoryName from source ($srcDirectory/$directoryName) to staging ($targetDirectory/$directoryName)..."
 
     if (Test-Path "$srcDirectory/$directoryName") {
-        Copy-Item "$srcDirectory/$directoryName" "$targetDirectory/$directoryName" -Recurse -WarningAction SilentlyContinue
+        Copy-Item "$srcDirectory/$directoryName" "$targetDirectory/$directoryName" -Recurse -WarningAction SilentlyContinue -ErrorAction Ignore
         Write-Host "Staged."
     }
     else {
         Write-Host "Mod doesn't have any $directoryName."
     }
+}
+
+function HandleSrcSubdirectories([string] $srcDir) {
+    $files = Get-ChildItem -Path $srcDir -Filter "*.uc"
+
+    Get-ChildItem -Path $srcDir -Recurse -Filter "*.uc" | Get-ChildItem | Copy-Item -Destination {$srcDir} -Force -WarningAction SilentlyContinue
+
+    return $files
+}
+
+function GetOriginalFilePaths([string] $srcDir) {
+    $files = Get-ChildItem -Path $srcDir -Recurse -Filter "*.uc"
+
+    return $files.FullName
 }
 
 function CheckErrorCode([string] $message) {
@@ -55,7 +69,7 @@ function SuccessMessage($message)
 # to the copies. If you try to jump to these files (e.g. by tying this output to the build commands in your editor)
 # you'll be editting the copies, which will then be overwritten the next time you build with the sources in your mod folder
 # that haven't been changed.
-function Launch-Make([string] $makeCmd, [string] $makeFlags, [string] $sdkPath, [string] $modSrcRoot) {
+function Invoke-Make([string] $makeCmd, [string] $makeFlags, [string] $sdkPath, [string] $modSrcRoot, [string[]] $originalFilePaths)  {
     # Create a ProcessStartInfo object to hold the details of the make command, its arguments, and set up
     # stdout/stderr redirection.
     $pinfo = New-Object System.Diagnostics.ProcessStartInfo
@@ -73,6 +87,7 @@ function Launch-Make([string] $makeCmd, [string] $makeFlags, [string] $sdkPath, 
     $messageData = New-Object psobject -property @{
         developmentDirectory = $developmentDirectory;
         modSrcRoot = $modSrcRoot
+        originalFilePaths = $originalFilePaths
     }
 
     # We need another object for the Exited event to set a flag we can monitor from this function.
@@ -83,13 +98,37 @@ function Launch-Make([string] $makeCmd, [string] $makeFlags, [string] $sdkPath, 
     $outAction = {
         $outTxt = $Event.SourceEventArgs.Data
         # Match warning/error lines
-        if ($outTxt -Match "Error|Warning") {
-            # And just do a regex replace on the sdk Development directory with the mod src directory.
-            # The pattern needs escaping to avoid backslashes in the path being interpreted as regex escapes, etc.
-            $pattern = [regex]::Escape($event.MessageData.developmentDirectory)
-            # n.b. -Replace is case insensitive
-            $replacementTxt = $outtxt -Replace $pattern, $event.MessageData.modSrcRoot
-            Write-Host $replacementTxt
+        $messagePattern = "^(.*)\(([0-9]*)\) : (.*)$"
+        if (($outTxt -Match "Error|Warning") -And ($outTxt -Match $messagePattern)) {
+            $pattern = [regex]::Escape($outTxt.split("(")[0])
+
+            [string]$searchTxt = $outTxt.split("(")[0]
+            [string]$searchTxt = [System.IO.Path]::GetFileName($searchTxt)
+            $filePath = ($event.MessageData.originalFilePaths | Where-Object { $_ -match $searchTxt})
+            $replacementTxt = $outtxt -Replace $pattern, "$filePath"
+            $outTxt = $replacementTxt -Replace $messagePattern, '$1:$2 : $3'
+        }
+ 
+        $summPattern = "^(Success|Failure) - ([0-9]+) error\(s\), ([0-9]+) warning\(s\) \(([0-9]+) Unique Errors, ([0-9]+) Unique Warnings\)"
+        if (-Not ($outTxt -Match "Warning/Error Summary") -And $outTxt -Match "Warning|Error") {
+            if ($outTxt -Match $summPattern) {
+                $numErr = $outTxt -Replace $summPattern, '$2'
+                $numWarn = $outTxt -Replace $summPattern, '$3'
+                if (([int]$numErr) -gt 0) {
+                    $clr = "Red"
+                } elseif (([int]$numWarn) -gt 0) {
+                    $clr = "Yellow"
+                } else {
+                    $clr = "Green"
+                }
+            } else {
+                if ($outTxt -Match "Error") {
+                    $clr = "Red"
+                } else {
+                    $clr = "Yellow"
+                }
+            }
+            Write-Host $outTxt -ForegroundColor $clr
         } else {
             Write-Host $outTxt
         }
@@ -212,7 +251,6 @@ function CheckX2ProjIncludes([string] $modProjectRoot, [string] $modName, [strin
 }
 
 function CleanX2ProjIncludes([string] $modProjectRoot, [string] $modName, [string] $projFilepath) {
-    # TODO
     [xml]$xmlProjContent = Get-Content $projFilepath
     $presentFiles = New-Object System.Collections.Generic.List[System.Object]
     $includesToRemove = New-Object System.Collections.Generic.List[System.Object]
@@ -303,7 +341,7 @@ $modSrcRoot = "$srcDirectory/$modNameCanonical"
 ValidateProjectFile $modSrcRoot $modNameCanonical
 
 # build the staging path
-$stagingPath = "{0}/XComGame/Mods/{1}/" -f $sdkPath, $modNameCanonical
+$stagingPath = "{0}/XComGame/Mods/{1}" -f $sdkPath, $modNameCanonical
 
 # determine whether or not there are changes to the Content directory before we clean
 # used later to determine if we can skip shader precompilation
@@ -314,25 +352,25 @@ $canSkipShaderPrecompliation = $false
 
 # Need to store the ModShaderCache before we compare the Content directories, it will interfere with the check.
 # Also, if there are no changes and we skip precompliation, we will need a backup of the ModShaderCache since it won't be regenerated after the stagingPath is cleaned.
-#if(Test-Path $tempCachePath) {
-#    # if we found a shadercache in here, that means that we found it last time and cached it, but the build failed and /tmp wasn't cleaned up... we can skip precompliation.
-#    $canSkipShaderPrecompliation = $true
-#    Write-Host "Found previously-stashed ModShaderCache. Shader precompliation can be skipped."
-#} elseif(Test-Path $shaderCachePath) {
-#    Write-Host "Found ModShaderCache, stashing it..."
-#    
-#    if(-not (Test-Path -Path $modSrcRoot/tmp)) {
-#        New-Item $modSrcRoot/tmp -type Directory
-#    } 
-#    
-#    Copy-Item -Path $shaderCachePath -Destination $tempCachePath
-#    Remove-Item -Path $shaderCachePath
-#    $canSkipShaderPrecompliation = $true
-#    
-#    Write-Host "Stashed."
-#} else {
-#    Write-Host "Unable to find a ModShaderCache. Shader precompliation is required."
-#}
+if(Test-Path $tempCachePath) {
+    # if we found a shadercache in here, that means that we found it last time and cached it, but the build failed and /tmp wasn't cleaned up... we can skip precompliation.
+    $canSkipShaderPrecompliation = $true
+    Write-Host "Found previously-stashed ModShaderCache. Shader precompliation can be skipped."
+} elseif(Test-Path $shaderCachePath) {
+    Write-Host "Found ModShaderCache, stashing it..."
+    
+    if(-not (Test-Path -Path $modSrcRoot/tmp)) {
+        New-Item $modSrcRoot/tmp -type Directory
+    } 
+    
+    Copy-Item -Path $shaderCachePath -Destination $tempCachePath
+    Remove-Item -Path $shaderCachePath
+    $canSkipShaderPrecompliation = $true
+    
+    Write-Host "Stashed."
+} else {
+    Write-Host "Unable to find a ModShaderCache. Shader precompliation is required."
+}
 
 # check to see if the files changed
 if($canSkipShaderPrecompliation) {
@@ -344,6 +382,7 @@ if($canSkipShaderPrecompliation) {
 } else {
     Write-Host "Can't skip shader precompliation."
     if(Test-Path $tempCachePath) {
+        Write-Host "Deleting stashed ModShaderCache."
         Remove-Item -Path $tempCachePath
         Remove-Item -path $modSrcRoot/tmp
     }
@@ -352,7 +391,7 @@ if($canSkipShaderPrecompliation) {
 # clean
 Write-Host "Cleaning mod project at $stagingPath...";
 if (Test-Path $stagingPath) {
-    Remove-Item $stagingPath -Recurse -Force -WarningAction SilentlyContinue;
+    Get-ChildItem $stagingPath -Recurse | Remove-Item -Recurse -Force -WarningAction SilentlyContinue;
 }
 Write-Host "Cleaned."
 
@@ -361,22 +400,24 @@ StageDirectory "Config" $modSrcRoot $stagingPath
 StageDirectory "Content" $modSrcRoot $stagingPath
 StageDirectory "Localization" $modSrcRoot $stagingPath
 StageDirectory "Src" $modSrcRoot $stagingPath
+
+$stagingClassPath = "{0}/Src/{1}/Classes" -f $stagingPath, $modNameCanonical
+$originalFilePaths = GetOriginalFilePaths $modSrcRoot
+$rootLevelFiles = HandleSrcSubdirectories $stagingClassPath
 New-Item "$stagingPath/Script" -ItemType Directory
 
 # read mod metadata from the x2proj file
-
 Write-Host "Reading mod metadata from $modSrcRoot/$modNameCanonical.x2proj..."
 [xml]$x2projXml = Get-Content -Path "$modSrcRoot/$modNameCanonical.x2proj"
 $modProperties = $x2projXml.Project.PropertyGroup
-$modPublishedId = $modProperties.SteamPublishedId
+$modPublishedId = $modProperties.SteamPublishId
 $modTitle = $modProperties.Name
 $modDescription = $modProperties.Description
 Write-Host "Read."
 
 # write mod metadata - used by Firaxis' "make" tooling
 Write-Host "Writing mod metadata..."
-$metadataPublishPath = "$sdkPath/XComGame/Mods/$modNameCanonical/$modNameCanonical.XComMod"
-WriteModMetadata -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription -writeTo $metadataPublishPath
+WriteModMetadata -mod $modNameCanonical -sdkPath $sdkPath -publishedId $modPublishedId -title $modTitle -description $modDescription
 Write-Host "Written."
 
 # mirror the SDK's SrcOrig to its Src
@@ -417,14 +458,14 @@ else {
 
 # build the base game scripts
 Write-Host "Compiling base game scripts..."
-# This could be replaced with a Launch-Make call as well for highlanders.
-& "$sdkPath/binaries/Win64/XComGame.com" make -nopause -unattended
+# This could be replaced with a Invoke-Make call as well for highlanders.
+& "$sdkPath/binaries/Win64/XComGame.com" make -nopause -unattended -debug
 Write-Host "Compiled."
 CheckErrorCode "Failed to compile the base game scripts. This probably isn't a problem with your mod. Have you been monkeying around with SrcOrig, perchance?"
 
 # build the mod's scripts
 Write-Host "Compiling mod scripts..."
-Launch-Make "$sdkPath/binaries/Win64/XComGame.com" "make -nopause -mods $modNameCanonical $stagingPath" $sdkPath $modSrcRoot
+Invoke-Make "$sdkPath/binaries/Win64/XComGame.com" "make -nopause -debug -mods $modNameCanonical $stagingPath" $sdkPath $modSrcRoot $originalFilePaths
 CheckErrorCode "Failed to compile mod scripts."
 Write-Host "Compiled."
 
@@ -446,15 +487,18 @@ else {
     Write-Host "Mod doesn't have any shader content. Skipping shader precompilation."
 }
 
+Remove-Item -Path $stagingClassPath/* -Include *.uc -Exclude $rootLevelFiles
+
 # copy compiled mod scripts to the staging area
 Write-Host "Copying the compiled mod scripts to staging..."
-Copy-Item "$sdkPath/XComGame/Script/$modNameCanonical.u" "$stagingPath/Script" -Force -WarningAction SilentlyContinue
+Robocopy.exe "$sdkPath/XComGame/Script/" "$stagingPath/Script" *$modNameCanonical.u* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /R:1000000 /W:30
 Write-Host "Copied."
 
 # copy all staged files to the actual game's mods folder
 Write-Host "Copying all staging files to production..."
 Robocopy.exe "$stagingPath" "$gamePath\XCom2-WarOfTheChosen\XComGame\Mods\$modNameCanonical" *.* /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /NP /R:1000000 /W:30
 Write-Host "Copied mod to game directory."
+
 
 # we made it!
 SuccessMessage("*** SUCCESS! ***")

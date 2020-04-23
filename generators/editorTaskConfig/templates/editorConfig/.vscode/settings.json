@@ -1,5 +1,6 @@
 {
     "mod.sdkpath": "<%- sdkPath %>",
     "mod.gamepath": "<%- gamePath %>",
-    "mod.amlpath": "<%- amlPath %>"
+    "mod.amlpath": "<%- amlPath %>",
+    "mod.amupath": "<%- amuPath %>"
 }

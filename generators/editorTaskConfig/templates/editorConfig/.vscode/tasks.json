@@ -4,7 +4,12 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/build.ps1' -mod '<%= modName %>' -srcDirectory '${workspaceRoot}/src' -sdkPath '${config:mod.sdkpath}' -gamePath '${config:mod.gamepath}'",
+            "command": "-file \"${workspaceRoot}/scripts/build.ps1\" -mod \"<%= modName %>\" -srcDirectory \"${workspaceRoot}/src\" -sdkPath \"${config:mod.sdkpath}\" -gamePath \"${config:mod.gamepath}\"",
+                "options": {
+                    "shell": {
+                        "executable": "powershell.exe",
+                    },
+            },
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -22,21 +27,42 @@
             }]
         },
         {
-            "label": "debug",
+            "label": "publish",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/run.ps1' -gamePath '${config:mod.gamepath}'",
+            "command": "-file \"${workspaceRoot}/scripts/publish.ps1\" -amuPath \"${config:mod.amupath}\"",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                },
+            },
             "problemMatcher": []
         },
         {
-            "label": "publish",
+            "label": "debug",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/publish.ps1' -amlPath '${config:mod.amlpath}'",
+            "command": "-file \"${workspaceRoot}/scripts/run.ps1\" -gamePath \"${config:mod.gamepath}\"",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                },
+            },
             "problemMatcher": []
         },
         {
             "label": "runUnrealEditor",
             "type": "shell",
-            "command": "powershell.exe -file '${workspaceRoot}/scripts/runUnrealEditor.ps1' -sdkPath '${config:sdkpath}'",
+            "command": "-file \"${workspaceRoot}/scripts/runUnrealEditor.ps1\" -sdkPath \"${config:mod.sdkpath}\"",
+            "options": {
+                "shell": {
+                    "executable": "powershell.exe",
+                },
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "launchAML",
+            "type": "process",
+            "command": "${config:mod.amlpath}",
             "problemMatcher": []
         }
     ]

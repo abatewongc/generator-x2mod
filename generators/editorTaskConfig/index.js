@@ -43,7 +43,11 @@ module.exports = class extends Generator {
         }, {
             type: 'input',
             name: 'amlPath',
-            message: 'Where\'s the Alternate Mod Uploader installed (absolute path to the .exe)? Leave blank if you don\'t use the AML.'
+            message: 'Where\'s the Alternate Mod Launcher installed (absolute path to the .exe)? Leave blank if you don\'t use the AML.'
+        }, {
+            type: 'input',
+            name: 'amuPath',
+            message: 'Where\'s the Alternate Mod Uploader installed (absolute path to the .exe)? Leave blank if you don\'t use the AMU.'
         }];
 
         return this.prompt(prompts).then(answers => {
@@ -51,6 +55,7 @@ module.exports = class extends Generator {
             this.editorConfig.editor = answers.editor;
             this.editorConfig.gamePath = answers.gamePath;
             this.editorConfig.sdkPath = answers.sdkPath;
+            this.editorConfig.amuPath = answers.amuPath;
             this.editorConfig.amlPath = answers.amlPath;
         });
     }
@@ -66,6 +71,7 @@ module.exports = class extends Generator {
                 // path.join uses single backslashes which causes problems in json/yml/other config files
                 gamePath: this.editorConfig.gamePath.replace(/\\/g, '/'),
                 sdkPath: this.editorConfig.sdkPath.replace(/\\/g, '/'),
+                amuPath: this.editorConfig.amuPath.replace(/\\/g, '/'),
                 amlPath: this.editorConfig.amlPath.replace(/\\/g, '/'),
                 modName: this.modConfigService.getSafeName()
             };

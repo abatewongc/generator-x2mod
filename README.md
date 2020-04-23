@@ -45,3 +45,28 @@ Good on you! The cool thing about creating a open source Yeoman generator for mo
 ### If I create a mod with this tool and decide I want to go back to a ModBuddy-based workflow, can I do that?
 
 Sure. Make a new project with the same `ModSafeName` and drop your project into it, overwriting the generated `x2proj`.
+
+### You got any... cool features?
+
+I'm so happy you asked. Check the following section.
+
+## (Some) Features
+### VSCode Integrations
+
+The generator provides support for VSCode tasks. They can launch the game directly, or the Alternate Mod Launcher. If you need to touch the editor, it has a task for that. If you're ready to publish, they can launch the Alternate Mod Uploader for you to do so. And of course, they can build your project and provide hyperlinks to the exact* line the problem is on.
+
+\* The Unrealscript compiler is sometimes off by a few lines. This isn't my fault!
+
+### More Powerful Building
+
+The build.ps1 is the main reason why this project even exists, and as time goes on it has become more and more powerful. Here's some of the things that it does for you:
+* .x2proj Validation
+    * The build script automatically formats the .x2proj when a build is started, adding new entries and removing ones that are no longer present.
+* Enable Src Subdirectories
+    * The build script automatically handles Src subdirectories. Before, when adding .uc files to your project, you were forced to keep them all in the same level directory, usually `src/ModSafeName/Classes`. With this feature, you can now split up your .uc files by type, category, whatever you want!
+* Skip Shader Precompilation
+    * The build script compares the previous run to the current run and determines if there have been any content changes that would require shader recompilaton.
+* Enable Custom Macros
+    * If you have ever wanted to add your own macros like Firaxis has done, well, now it's much simpler. The default templates provide a file named `extra_globals.uci`. The build script looks for this file and appends it to the SDK's uci, enabling the use of macros in your project.
+* Build Notification Sounds
+    * Know just how badly you messed up before even looking at the output.
